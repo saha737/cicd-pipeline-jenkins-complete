@@ -1,14 +1,18 @@
 pipeline {
-    agent any
-    environment {
-        //be sure to replace "bhavukm" with your own Docker Hub username
-        DOCKER_IMAGE_NAME = "kiransahasra/train-schedule"
-    }
-    stages {
+  agent any
+  environment {
+    DOCKER_IMAGE_NAME = 'sahasra/train-schedule'
+  }
+
+  stages {
         stage('Build') {
-        agent { docker { image 'eclipse-temurin:8-jdk', args '-u 0:0' } }
+        agent {
+            docker {
+            image 'eclipse-temurin:8-jdk'   // required
+            args  '-u 0:0'                  // optional
+            }
+        }
         steps {
-            sh 'java -version'  // should show 1.8.x
             sh '''
             set -eux
             apt-get update
@@ -85,5 +89,5 @@ pipeline {
                 )
             }
         }
-    }
+   }
 }
