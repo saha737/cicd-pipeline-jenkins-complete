@@ -4,14 +4,20 @@ pipeline {
         //be sure to replace "bhavukm" with your own Docker Hub username
         DOCKER_IMAGE_NAME = "sahasra/train-schedule"
     }
-    stages {
-        stage('Build') {
-            steps {
-                echo 'Running build automation'
-                sh './gradlew build --no-daemon'
-                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
-            }
-        }
+ stages {
+    stage('Build') {
+      agent {
+        // pulls a container with JDK 8 just for this stage
+        docker { image 'eclipse-temurin:8-jdk' }
+      }
+      steps {
+        sh 'java -version'              // sanity check -> should show 1.8
+        sh './gradlew --version'        // shows Gradle 4.6
+        sh './gradlew build --no-daemon'
+        // adjust the artifact path to what the project actually produces:
+        archiveArtifacts artifacts: 'build/libs/*', allowEmptyArchive: true
+      }
+    }  
         stage('Build Docker Image') {
             when {
                 branch 'master'
