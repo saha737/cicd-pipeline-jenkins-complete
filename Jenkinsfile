@@ -6,27 +6,27 @@ pipeline {
     }
  stage('Build') {
    agent { docker { image 'eclipse-temurin:8-jdk' } } // JDK 8 for Gradle 4.6
-   steps {
-     sh '''
-       set -eux
-       # Install Node 14.x in the container
-       apt-get update
-       apt-get install -y curl ca-certificates gnupg
-       curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
-       apt-get install -y nodejs
-       node -v
-       npm -v
+    steps {
+      sh '''
+        set -eux
+        # Install Node 14.x in the container
+        apt-get update
+        apt-get install -y curl ca-certificates gnupg
+        curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+        apt-get install -y nodejs
+        node -v
+        npm -v
 
-      # Tell the (old) Gradle Node plugin to use system Node, not download it
-      # These env -> Gradle project properties are safe to set even if one is ignored.
-       export ORG_GRADLE_PROJECT_nodeDownload=false
-       export GRADLE_OPTS="$GRADLE_OPTS -Dcom.moowork.node.download=false"
+       # Tell the (old) Gradle Node plugin to use system Node, not download it
+       # These env -> Gradle project properties are safe to set even if one is ignored.
+        export ORG_GRADLE_PROJECT_nodeDownload=false
+        export GRADLE_OPTS="$GRADLE_OPTS -Dcom.moowork.node.download=false"
 
-       ./gradlew --no-daemon clean build
-     '''
-     // If your artifact is a JAR/WAR, archive from build/libs:
-     archiveArtifacts artifacts: 'build/libs/*', allowEmptyArchive: true
-   }
+        ./gradlew --no-daemon clean build
+      '''
+      // If your artifact is a JAR/WAR, archive from build/libs:
+      archiveArtifacts artifacts: 'build/libs/*', allowEmptyArchive: true
+    }
  }
 
   
