@@ -1,40 +1,17 @@
 pipeline {
-  agent any
-
-  environment {
-    // be sure to replace with your own Docker Hub repo if needed
-    DOCKER_IMAGE_NAME = "sahasra/train-schedule"
-  }
-
-  stages {
-
-    stage('Build') {
-      agent {
-        // JDK 8 for Gradle 4.6 (runs inside a temporary container)
-        docker { image 'eclipse-temurin:8-jdk' }
-      }
-      steps {
-        sh '''
-          set -eux
-          # Install Node 14.x in the container
-          apt-get update
-          apt-get install -y curl ca-certificates gnupg
-          curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
-          apt-get install -y nodejs
-          node -v
-          npm -v
-
-          # Tell the old Gradle Node plugin to use system Node, not download it
-          export ORG_GRADLE_PROJECT_nodeDownload=false
-          export GRADLE_OPTS="$GRADLE_OPTS -Dcom.moowork.node.download=false"
-
-          ./gradlew --no-daemon clean build
-        '''
-        // If your artifact is a JAR/WAR, it will be in build/libs/
-        archiveArtifacts artifacts: 'build/libs/*', allowEmptyArchive: true
-      }
+    agent any
+    environment {
+        //be sure to replace "bhavukm" with your own Docker Hub username
+        DOCKER_IMAGE_NAME = "kiransahasra/train-schedule"
     }
-  
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Running build automation'
+                sh './gradlew build --no-daemon'
+                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+            }
+        }
         stage('Build Docker Image') {
             when {
                 branch 'master'
