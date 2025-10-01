@@ -1,35 +1,56 @@
-plugins {
-  //inlude the nodeJS plugin to execute nodejs and npm tasks
-  id "com.moowork.node" version "1.2.0"
+// build.gradle (Gradle 4.6 compatible)
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        // Same plugin your job has been pulling
+        classpath "com.moowork.gradle:gradle-node-plugin:1.2.0"
+    }
 }
 
+apply plugin: "base"               // gives us clean/build lifecycle
+apply plugin: "com.moowork.node"   // npm tasks
+
+// We install Node in the Jenkins container; tell plugin not to download Node 9.x
 node {
-	download = true
-	version = "9.11.1"
-	npmVersion = "5.6.0"
+    download = false
 }
 
-//declare a build task
-task build
-
-//declare a task to create a zip of the app
-task zip(type: Zip) {
-	from ('.') {
-		include "*"
-		include "bin/**"
-		include "data/**"
-		include "node_modules/**"
-		include "public/**"
-		include "routes/**"
-		include "views/**"
-	}
-	destinationDir(file("dist"))
-	baseName "trainSchedule"
+// 1) npm install
+task npmInstall(type: com.moowork.gradle.node.npm.NpmTask) {
+    args = ["install", "--no-fund", "--no-audit"]
 }
 
-//declare task dependencies
-build.dependsOn zip
-zip.dependsOn npm_build
-npm_build.dependsOn npm_test
-npm_test.dependsOn npmInstall
-npm_build.dependsOn npmInstall
+// 2) npm test (uses "test": "./node_modules/.bin/mocha")
+task npmTest(type: com.moowork.gradle.node.npm.NpmTask) {
+    args = ["test"]
+}
+npmTest.dependsOn npmInstall
+
+// 3) Package the Node app into dist/trainSchedule.zip
+task packageDist(type: Zip) {
+    destinationDir = file("dist")
+    archiveName = "trainSchedule.zip"
+
+    // Include the app sources you need to run in a container
+    from(".") {
+        include "package.json", "package-lock.json"
+        include "app.js"
+        include "bin/**"
+        include "routes/**"
+        include "views/**"
+        include "public/**"
+        include "db.json"            // if your app uses lowdb file (remove if not present)
+        exclude "node_modules/**"
+        exclude ".git/**"
+        exclude "dist/**"
+    }
+}
+packageDist.dependsOn npmTest
+
+// Make 'gradle build' produce the zip
+build.dependsOn packageDist
